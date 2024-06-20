@@ -1,6 +1,7 @@
 """PDF generation management."""
 
 import pydyf
+from tinycss2.color4 import D50, D65
 
 from .. import VERSION, Attachment
 from ..html import W3C_DATE_RE
@@ -133,6 +134,17 @@ def generate_pdf(document, target, zoom, **options):
         'XObject': x_objects,
         'Pattern': patterns,
         'Shading': shadings,
+        'ColorSpace': pydyf.Dictionary({
+            'xyz': pydyf.Array(('/Lab', pydyf.Dictionary({
+                'WhitePoint': pydyf.Array((1, 1, 1))
+            }))),
+            'xyz-d50': pydyf.Array(('/Lab', pydyf.Dictionary({
+                'WhitePoint': pydyf.Array(D50)
+            }))),
+            'xyz-d65': pydyf.Array(('/Lab', pydyf.Dictionary({
+                'WhitePoint': pydyf.Array(D65)
+            }))),
+        })
     })
     pdf.add_object(resources)
     pdf_names = []

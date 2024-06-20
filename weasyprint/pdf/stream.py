@@ -1,7 +1,9 @@
 """PDF stream."""
 
 import pydyf
+from tinycss2.color4 import D50, D65, xyz_to_lab
 
+from ..logger import LOGGER
 from ..matrix import Matrix
 from ..text.ffi import ffi
 from ..text.fonts import get_pango_font_key
@@ -89,19 +91,35 @@ class Stream(pydyf.Stream):
         super().end_text()
 
     def set_color(self, color, stroke=False):
-        r, g, b, a = color
+        space = color.space
+        *channels, a = color
         if stroke:
-            if (r, g, b) == self._current_color_stroke:
+            if (space, *channels) == self._current_color_stroke:
                 return
             else:
-                self._current_color_stroke = (r, g, b)
+                self._current_color_stroke = (space, *channels)
         else:
-            if (r, g, b) == self._current_color:
+            if (space, *channels) == self._current_color:
                 return
             else:
-                self._current_color = (r, g, b)
+                self._current_color = (space, *channels)
 
-        super().set_color_rgb(r, g, b, stroke)
+        if space == 'srgb':
+            super().set_color_rgb(*channels, stroke)
+        else:
+            if space in ('xyz', 'xyz-d50', 'xyz-d65'):
+                super().color_space(space, stroke)
+                if space == 'xyz':
+                    d = (1, 1, 1)
+                elif space == 'xyz-d50':
+                    d = D50
+                elif space == 'xyz-d65':
+                    d = D65
+                lab = xyz_to_lab(*channels, d)
+                super().set_color_special(None, stroke, *lab)
+            else:
+                LOGGER.warn('Unsupported color space %, use sRGB instead')
+                super().set_color_rgb(*channels, stroke)
         self.set_alpha(a, stroke)
 
     def set_font_size(self, font, size):
