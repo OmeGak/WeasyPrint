@@ -1,16 +1,7 @@
 """PDF/A generation."""
 
-try:
-    # Available in Python 3.9+
-    from importlib.resources import files
-except ImportError:
-    # Deprecated in Python 3.11+
-    from importlib.resources import read_binary
-else:
-    def read_binary(package, resource):
-        return (files(package) / resource).read_bytes()
-
 from functools import partial
+from importlib.resources import files
 
 import pydyf
 
@@ -22,7 +13,7 @@ def pdfa(pdf, metadata, document, page_streams, attachments, compress,
     """Set metadata for PDF/A documents."""
     # Add ICC profile.
     profile = pydyf.Stream(
-        [read_binary(__package__, 'sRGB2014.icc')],
+        (files(__package__) / 'sRGB2014.icc').read_bytes(),
         pydyf.Dictionary({'N': 3, 'Alternate': '/DeviceRGB'}),
         compress=compress)
     pdf.add_object(profile)
