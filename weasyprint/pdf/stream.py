@@ -81,36 +81,32 @@ class Stream(pydyf.Stream):
         super().end_text()
 
     def set_color(self, color, stroke=False):
-        space = color.space
-        *channels, a = color
+        *channels, alpha = color
         if stroke:
-            if (space, *channels) == self._current_color_stroke:
+            if (color.space, *channels) == self._current_color_stroke:
                 return
             else:
-                self._current_color_stroke = (space, *channels)
+                self._current_color_stroke = (color.space, *channels)
         else:
-            if (space, *channels) == self._current_color:
+            if (color.space, *channels) == self._current_color:
                 return
             else:
-                self._current_color = (space, *channels)
+                self._current_color = (color.space, *channels)
 
-        if space == 'srgb':
-            super().set_color_rgb(*channels, stroke)
+        if color.space in ('srgb', 'hsl', 'hwb'):
+            super().set_color_rgb(*color.to('srgb').coordinates, stroke)
+        elif color.space in ('xyz-d65', 'oklab', 'oklch'):
+            super().color_space('lab-d65', stroke)
+            lightness, a, b = color.to('lab').coordinates
+            super().set_color_special(None, stroke, lightness, a, b)
+        elif color.space in ('xyz-d50', 'lab', 'lch'):
+            super().color_space('lab-d50', stroke)
+            lightness, a, b = color.to('lab').coordinates
+            super().set_color_special(None, stroke, lightness, a, b)
         else:
-            if space in ('xyz', 'xyz-d50', 'xyz-d65'):
-                super().color_space(space, stroke)
-                if space == 'xyz':
-                    d = (1, 1, 1)
-                elif space == 'xyz-d50':
-                    d = D50
-                elif space == 'xyz-d65':
-                    d = D65
-                lab = xyz_to_lab(*channels, d)
-                super().set_color_special(None, stroke, *lab)
-            else:
-                LOGGER.warn('Unsupported color space %, use sRGB instead')
-                super().set_color_rgb(*channels, stroke)
-        self.set_alpha(a, stroke)
+            LOGGER.warn('Unsupported color space %s, use sRGB instead', color.space)
+            super().set_color_rgb(*channels, stroke)
+        self.set_alpha(alpha, stroke)
 
     def set_font_size(self, font, size):
         if (font, size) == self._current_font:

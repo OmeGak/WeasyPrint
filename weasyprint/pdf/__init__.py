@@ -126,12 +126,14 @@ def generate_pdf(document, target, zoom, **options):
     pdf = pydyf.PDF()
     images = {}
     color_space = pydyf.Dictionary({
-        'xyz': pydyf.Array(('/Lab', pydyf.Dictionary({
-            'WhitePoint': pydyf.Array((1, 1, 1))}))),
-        'xyz-d50': pydyf.Array(('/Lab', pydyf.Dictionary({
-            'WhitePoint': pydyf.Array(D50)}))),
-        'xyz-d65': pydyf.Array(('/Lab', pydyf.Dictionary({
-            'WhitePoint': pydyf.Array(D65)}))),
+        'lab-d50': pydyf.Array(('/Lab', pydyf.Dictionary({
+            'WhitePoint': pydyf.Array(D50),
+            'Range': pydyf.Array((-125, 125, -125, 125)),
+        }))),
+        'lab-d65': pydyf.Array(('/Lab', pydyf.Dictionary({
+            'WhitePoint': pydyf.Array(D65),
+            'Range': pydyf.Array((-125, 125, -125, 125)),
+        }))),
     })
     pdf.add_object(color_space)
     resources = pydyf.Dictionary({
